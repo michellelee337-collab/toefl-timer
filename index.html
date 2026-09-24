@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOEFL Timer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#EEF1F5;
+    --surface:#FFFFFF;
+    --surface-2:#E4E9EF;
+    --border:#D2D9E1;
+    --text:#141C26;
+    --text-dim:#57626F;
+    --accent:#2454A6;
+    --accent-ink:#FFFFFF;
+    --reading:#1E8B78;
+    --listening:#685AA3;
+    --speaking:#C1791F;
+    --writing:#AE4740;
+    --warn:#B9821A;
+    --critical:#C23F2E;
+    --success:#1F8F5C;
+    --focus:#2454A6;
+    --shadow: 0 1px 2px rgba(20,28,38,.06), 0 8px 24px -12px rgba(20,28,38,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E141B;
+      --surface:#161F29;
+      --surface-2:#1D2833;
+      --border:#2C3946;
+      --text:#EAF1F8;
+      --text-dim:#9DACBB;
+      --accent:#6FA3E8;
+      --accent-ink:#0E141B;
+      --reading:#3EBBA0;
+      --listening:#A497DE;
+      --speaking:#E3A253;
+      --writing:#E08379;
+      --warn:#E3B24D;
+      --critical:#E56C5D;
+      --success:#4CC48A;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E141B;
+    --surface:#161F29;
+    --surface-2:#1D2833;
+    --border:#2C3946;
+    --text:#EAF1F8;
+    --text-dim:#9DACBB;
+    --accent:#6FA3E8;
+    --accent-ink:#0E141B;
+    --reading:#3EBBA0;
+    --listening:#A497DE;
+    --speaking:#E3A253;
+    --writing:#E08379;
+    --warn:#E3B24D;
+    --critical:#E56C5D;
+    --success:#4CC48A;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"IBM Plex Sans", system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:20px 40px;
+    min-height:100vh;
+  }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .wrap{ max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  [id^="screen-"]:not([hidden]){ display:flex; flex-direction:column; gap:14px; }
+
+  header.app-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .brand h1{ font-size:1.15rem; margin:0; letter-spacing:.01em; }
+  .head-actions{ display:flex; align-items:center; gap:6px; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ background:var(--surface-2); }
+  .icon-btn:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--focus); outline-offset:2px;
+  }
+  svg.icon{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow); }
+
+  .mode-grid{ display:flex; flex-direction:column; gap:12px; }
+  .mode-card{
+    text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:16px 18px; cursor:pointer; display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);
+    color:var(--text); font-family:inherit;
+  }
+  .mode-card:hover{ border-color:var(--accent); }
+  .mode-card .m-title{ font-weight:700; font-size:1rem; }
+  .mode-card .m-desc{ font-size:.85rem; color:var(--text-dim); line-height:1.4; }
+  .mode-card .m-meta{ font-size:.75rem; color:var(--text-dim); margin-top:4px; font-family:"IBM Plex Mono",monospace; }
+
+  .section-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:420px){ .section-grid{ grid-template-columns:1fr; } }
+  .section-btn{
+    border:1px solid var(--border); border-radius:14px; padding:14px; text-align:left; cursor:pointer;
+    background:var(--surface); color:var(--text); font-family:inherit; display:flex; flex-direction:column; gap:6px;
+    border-left:5px solid var(--sc, var(--accent));
+  }
+  .section-btn .s-name{ font-weight:700; }
+  .section-btn .s-sub{ font-size:.78rem; color:var(--text-dim); }
+  .section-btn:hover{ background:var(--surface-2); }
+
+  .task-list{ display:flex; flex-direction:column; gap:10px; }
+  .task-row{
+    border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--surface);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .task-row .t-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .task-row .t-name{ font-weight:700; font-size:.95rem; }
+  .task-row .t-note{ font-size:.8rem; color:var(--text-dim); line-height:1.4; }
+  .tag{
+    font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:999px;
+    font-weight:600; white-space:nowrap;
+  }
+  .tag.approx{ background:color-mix(in srgb, var(--warn) 20%, transparent); color:var(--warn); }
+  .t-fields{ display:flex; gap:10px; flex-wrap:wrap; }
+  .field{ display:flex; flex-direction:column; gap:3px; font-size:.75rem; color:var(--text-dim); }
+  .field input{
+    width:84px; padding:7px 8px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text);
+    font-family:"IBM Plex Mono",monospace; font-size:.85rem;
+  }
+  .t-start{
+    align-self:flex-start; margin-top:2px; background:var(--accent); color:var(--accent-ink); border:none;
+    border-radius:9px; padding:8px 14px; font-weight:600; font-size:.82rem; cursor:pointer;
+  }
+
+  .backrow{ display:flex; align-items:center; gap:8px; }
+  .backbtn{
+    display:flex; align-items:center; gap:6px; background:none; border:none; color:var(--text-dim);
+    font-family:inherit; font-size:.85rem; cursor:pointer; padding:4px 2px;
+  }
+  .backbtn:hover{ color:var(--text); }
+  .screen-title{ font-size:1rem; font-weight:700; margin:0; }
+
+  /* run screen */
+  .run-card{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:26px 18px; }
+  .run-topline{ display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center; }
+  .run-section{ font-size:.72rem; text-transform:uppercase; letter-spacing:.09em; font-weight:700; color:var(--sc,var(--accent)); }
+  .run-phase{ font-size:1.02rem; font-weight:700; }
+  .run-phase-sub{ font-size:.78rem; color:var(--text-dim); }
+  .run-tasklist{ font-size:.74rem; color:var(--text-dim); max-width:38ch; }
+
+  .ring-wrap{ position:relative; width:min(72vw,240px); height:min(72vw,240px); }
+  .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-track{ fill:none; stroke:var(--surface-2); stroke-width:10; }
+  .ring-progress{ fill:none; stroke:var(--sc,var(--accent)); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset .25s linear, stroke .25s; }
+  @media (prefers-reduced-motion: reduce){ .ring-progress{ transition:none; } }
+  .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .big-time{ font-size:clamp(2.2rem,10vw,3rem); font-weight:600; line-height:1; }
+  .big-time.warn{ color:var(--warn); }
+  .big-time.critical{ color:var(--critical); }
+  @keyframes timeUpPulse{ 0%{ transform:scale(1); } 35%{ transform:scale(1.1); } 100%{ transform:scale(1); } }
+  .big-time.time-up{ animation:timeUpPulse .5s ease-out; }
+  @media (prefers-reduced-motion: reduce){ .big-time.time-up{ animation:none; } }
+  .up-next{ font-size:.72rem; color:var(--text-dim); }
+
+  .controls{ display:flex; align-items:center; gap:10px; }
+  .ctrl-btn{
+    display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); cursor:pointer;
+  }
+  .ctrl-btn.primary{ width:64px; height:64px; background:var(--accent); color:var(--accent-ink); border:none; }
+  .ctrl-btn.primary svg{ width:26px; height:26px; }
+  .ctrl-btn.secondary{ width:46px; height:46px; }
+  .ctrl-btn.secondary svg{ width:19px; height:19px; }
+  .ctrl-btn:hover{ filter:brightness(1.05); }
+  .ctrl-btn:disabled{ opacity:.35; cursor:default; }
+  .ctrl-btn:disabled:hover{ filter:none; }
+  .kbd-hint{ font-size:.72rem; color:var(--text-dim); }
+
+  .queue-strip{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .step-count{ font-size:.72rem; color:var(--text-dim); }
+  .qdot{ width:9px; height:9px; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); }
+  .qdot.done{ background:var(--success); border-color:var(--success); }
+  .qdot.current{ background:var(--sc,var(--accent)); border-color:var(--sc,var(--accent)); }
+
+  .exit-link{ background:none; border:none; color:var(--text-dim); font-size:.78rem; text-decoration:underline; cursor:pointer; }
+
+  .done-card{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:30px 18px; }
+  .done-card h2{ margin:0; font-size:1.2rem; }
+  .done-card p{ margin:0; color:var(--text-dim); font-size:.88rem; }
+  .done-actions{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
+  .btn{ padding:10px 16px; border-radius:10px; font-size:.85rem; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn.primary{ background:var(--accent); color:var(--accent-ink); border:none; }
+  .btn.ghost{ background:none; border:1px solid var(--border); color:var(--text); }
+
+  .share-row{ display:flex; justify-content:center; }
+  .share-row .btn{ width:100%; max-width:260px; }
+
+  .resume-card:not([hidden]){ display:flex; flex-direction:column; gap:10px; border-left:4px solid var(--accent); }
+  .resume-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  @keyframes cardFlash{
+    0%,100%{ box-shadow:var(--shadow); border-color:var(--border); }
+    25%{ box-shadow:0 0 0 5px color-mix(in srgb, var(--critical) 45%, transparent), var(--shadow); border-color:var(--critical); }
+  }
+  .run-card.flash{ animation:cardFlash .9s ease-out; }
+  @media (prefers-reduced-motion: reduce){ .run-card.flash{ animation:none; } }
+
+  .toast{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--text); color:var(--bg);
+    padding:8px 16px; border-radius:999px; font-size:.8rem; opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .toast.show{ opacity:1; }
+
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  footer.app-foot{ text-align:center; font-size:.72rem; color:var(--text-dim); padding-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app-head">
+    <div class="brand">
+      <h1>TOEFL Timer</h1>
+    </div>
+    <div class="head-actions">
+      <button class="icon-btn" id="soundToggle" type="button" aria-pressed="true" aria-label="Mute timer sounds">
+        <svg class="icon" id="soundIcon" viewBox="0 0 24 24"><polygon points="4,9 8,9 13,4 13,20 8,15 4,15" /><path d="M16 8a5 5 0 0 1 0 8" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section id="screen-home">
+    <div class="card resume-card" id="resumeCard" hidden>
+      <div>
+        <span class="m-title">Resume where you left off</span>
+        <div class="m-desc" id="resumeDesc"></div>
+      </div>
+      <div class="resume-actions">
+        <button class="btn primary" id="resumeBtn" type="button">Resume</button>
+        <button class="btn ghost" id="discardBtn" type="button">Discard</button>
+      </div>
+    </div>
+
+    <div class="mode-grid">
+      <button class="mode-card" data-mode="full" type="button">
+        <span class="m-title">Full practice test</span>
+        <span class="m-desc">All four sections in order and back-to-back, timed like test day. Reading and Listening run as one adaptive clock each; Speaking and Writing step through every task within their section time.</span>
+        <span class="m-meta">1 HR 23 MIN TO 1 HR 29 MIN TOTAL</span>
+      </button>
+      <button class="mode-card" data-mode="section" type="button">
+        <span class="m-title">Practice by section</span>
+        <span class="m-desc">Run one section's full clock, or drill a single task type within it (e.g. Take an Interview, Build a Sentence) with per-item timing.</span>
+        <span class="m-meta">READING, LISTENING, SPEAKING, WRITING</span>
+      </button>
+    </div>
+
+    <div class="share-row">
+      <button class="btn ghost" id="copyLinkBtn" type="button">Copy link to share</button>
+    </div>
+  </section>
+
+  <!-- SECTION PICK -->
+  <section id="screen-sectionpick" hidden>
+    <div class="backrow">
+      <button class="backbtn" type="button" data-back="home"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><polyline points="15,18 9,12 15,6" /></svg> Back</button>
+    </div>
+    <h2 class="screen-title" id="sectionPickTitle">Choose a section</h2>
+    <div class="section-grid" id="sectionGrid"></div>
+  </section>
+
+  <!-- TASK PICK (drill) -->
+  <section id="screen-taskpick" hidden>
+    <div class="backrow">
+      <button class="backbtn" type="button" data-back="sectionpick"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><polyline points="15,18 9,12 15,6" /></svg> Back</button>
+    </div>
+    <h2 class="screen-title" id="taskPickTitle">Choose a task type</h2>
+    <div class="task-list" id="taskList"></div>
+  </section>
+
+  <!-- RUN -->
+  <section id="screen-run" hidden>
+    <div class="backrow">
+      <button class="exit-link" type="button" id="exitRun">End &amp; return to menu</button>
+    </div>
+    <div class="card run-card" id="runCard">
+      <div class="run-topline">
+        <span class="run-section" id="runSection">SECTION</span>
+        <span class="run-phase" id="runPhase">Phase label</span>
+        <span class="run-phase-sub" id="runPhaseSub"></span>
+        <span class="run-tasklist" id="runTaskList"></span>
+      </div>
+
+      <div class="ring-wrap">
+        <svg viewBox="0 0 200 200">
+          <circle class="ring-track" cx="100" cy="100" r="90"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="100" cy="100" r="90"></circle>
+        </svg>
+        <div class="ring-center">
+          <span class="big-time mono" id="bigTime">00:00</span>
+          <span class="up-next" id="upNext">&nbsp;</span>
+        </div>
+      </div>
+
+      <div class="queue-strip" id="queueStrip"></div>
+      <span class="step-count" id="stepCount"></span>
+
+      <div class="controls">
+        <button class="ctrl-btn secondary" id="resetBtn" type="button" aria-label="Reset current phase">
+          <svg class="icon" viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10" /><path d="M3.5 15a9 9 0 1 0 2-9.5L1 10" /></svg>
+        </button>
+        <button class="ctrl-btn secondary" id="prevBtn" type="button" aria-label="Go to previous phase">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20" /><polygon points="18,4 8,12 18,20" fill="currentColor" stroke="none" /></svg>
+        </button>
+        <button class="ctrl-btn primary" id="playPauseBtn" type="button" aria-label="Start">
+          <svg class="icon" id="playPauseIcon" viewBox="0 0 24 24" stroke="none" fill="currentColor"><polygon points="6,4 20,12 6,20" /></svg>
+        </button>
+        <button class="ctrl-btn secondary" id="skipBtn" type="button" aria-label="Skip to next phase">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="6,4 16,12 6,20" fill="currentColor" stroke="none" /><line x1="18" y1="4" x2="18" y2="20" /></svg>
+        </button>
+      </div>
+      <span class="kbd-hint">Space start or pause, P back, N next, R reset</span>
+    </div>
+  </section>
+
+  <!-- DONE -->
+  <section id="screen-done" hidden>
+    <div class="card done-card">
+      <h2 id="doneTitle">Complete</h2>
+      <p id="doneSub"></p>
+      <div class="done-actions">
+        <button class="btn primary" id="doneRestart" type="button">Run again</button>
+        <button class="btn ghost" id="doneHome" type="button">Back to menu</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="app-foot">Section lengths, item counts, and task types follow the <a href="https://www.eu.ets.org/pdfs/toefl/toefl-ibt-test-specifications-2026.pdf" target="_blank" rel="noopener" style="color:inherit;">ETS TOEFL iBT 2026 Test Blueprint</a>. Per-item drill pacing is an editable practice estimate, and cues are synthesized, not ETS audio.</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr-only" id="srAnnounce" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- data ---------- */
+  var SECTIONS = {
+    reading: { key:'reading', name:'Reading', color:'--reading', minutes:30, rangeNote:'27 to 30 min, adaptive (2 stages)', items:50,
+      tasks:[
+        { name:'Complete the Words', itemsNum:30, defaultSec:20, note:'Restore missing letters within academic paragraphs. 30 items per the ETS blueprint.' },
+        { name:'Read in Daily Life', itemsNum:10, defaultSec:45, note:'Everyday texts, answered in 2-item and 3-item sets. 5 to 15 items per the ETS blueprint.' },
+        { name:'Read an Academic Passage', itemsNum:10, defaultSec:60, note:'Passages up to ~200 words with comprehension questions. 5 to 15 items per the ETS blueprint.' }
+      ] },
+    listening: { key:'listening', name:'Listening', color:'--listening', minutes:29, rangeNote:'25 to 29 min, adaptive (2 stages)', items:47,
+      tasks:[
+        { name:'Listen and Choose a Response', itemsNum:17, defaultSec:20, note:'Pick the most appropriate response to a short exchange. 15 to 19 items per the ETS blueprint.' },
+        { name:'Listen to a Conversation', itemsNum:10, defaultSec:40, note:'Short campus dialogues. 10 items per the ETS blueprint.' },
+        { name:'Listen to an Announcement', itemsNum:8, defaultSec:30, note:'Classroom or campus announcements. 6 to 10 items per the ETS blueprint.' },
+        { name:'Listen to an Academic Talk', itemsNum:12, defaultSec:45, note:'Lecture excerpts across disciplines. 8 to 16 items per the ETS blueprint.' }
+      ] },
+    speaking: { key:'speaking', name:'Speaking', color:'--speaking', minutes:8, rangeNote:'~8 min', items:11,
+      tasks:[
+        { name:'Listen and Repeat', itemsNum:7, responseSec:10, note:'Repeat each sentence after hearing it once. No prep time: you respond right after a beep. 7 items per the ETS blueprint; response length here is an editable estimate.' },
+        { name:'Take an Interview', itemsNum:4, responseSec:45, note:'Answer each interview-style question aloud. No prep time, no repeats, no re-recording: you respond right after a beep. 4 items per the ETS blueprint; response length here is an editable estimate.' }
+      ] },
+    writing: { key:'writing', name:'Writing', color:'--writing', minutes:23, rangeNote:'~23 min', items:12,
+      tasks:[
+        { name:'Build a Sentence', itemsNum:10, defaultSec:30, note:'Assemble a grammatical sentence from given elements. 10 items per the ETS blueprint.' },
+        { name:'Write an Email', itemsNum:1, fixedMinutes:7, note:'Write a short multi-sentence email. 1 item per the ETS blueprint; the 7-minute duration here is an editable estimate.' },
+        { name:'Write for an Academic Discussion', itemsNum:1, fixedMinutes:10, note:'Post a paragraph-length response to an academic discussion prompt. 1 item per the ETS blueprint; the 10-minute duration here is an editable estimate.' }
+      ] }
+  };
+  var SECTION_ORDER = ['reading','listening','speaking','writing'];
+
+  /* ---------- storage ---------- */
+  var settings = { soundOn:true };
+  try{
+    var saved = JSON.parse(localStorage.getItem('toefl2026timer.settings') || '{}');
+    Object.assign(settings, saved);
+  }catch(e){}
+  function saveSettings(){
+    try{ localStorage.setItem('toefl2026timer.settings', JSON.stringify(settings)); }catch(e){}
+  }
+
+  var PROGRESS_KEY = 'toefl2026timer.progress';
+  function saveProgress(){
+    if(runState.idx < 0 || runState.idx >= runState.queue.length) return;
+    try{
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+        queue: runState.queue,
+        idx: runState.idx,
+        secondsLeft: runState.secondsLeft,
+        contextLabel: runState.contextLabel
+      }));
+    }catch(e){}
+  }
+  function loadProgress(){
+    try{
+      var raw = localStorage.getItem(PROGRESS_KEY);
+      if(!raw) return null;
+      var data = JSON.parse(raw);
+      if(!data || !Array.isArray(data.queue) || typeof data.idx !== 'number') return null;
+      if(data.idx < 0 || data.idx >= data.queue.length) return null;
+      return data;
+    }catch(e){ return null; }
+  }
+  function clearProgress(){
+    try{ localStorage.removeItem(PROGRESS_KEY); }catch(e){}
+  }
+
+  /* ---------- audio ---------- */
+  var actx = null;
+  function ensureCtx(){
+    if(!actx){
+      try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ actx = null; }
+    }
+    if(actx && actx.state === 'suspended'){ actx.resume(); }
+    return actx;
+  }
+  function tone(ctx, freq, startAt, dur, opts){
+    opts = opts || {};
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = opts.type || 'sine';
+    osc.frequency.setValueAtTime(freq, startAt);
+    var peak = opts.peak || 0.16;
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(peak, startAt + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(startAt); osc.stop(startAt + dur + 0.02);
+  }
+  function playBeep(){
+    if(!settings.soundOn) return;
+    var ctx = ensureCtx();
+    if(!ctx) return;
+    tone(ctx, 1000, ctx.currentTime + 0.01, 0.18, {peak:0.18, type:'square'});
+  }
+
+  function signalTimeUp(){
+    try{ if(navigator.vibrate){ navigator.vibrate([120, 80, 120]); } }catch(e){}
+    var card = document.getElementById('runCard');
+    card.classList.remove('flash');
+    void card.offsetWidth;
+    card.classList.add('flash');
+    setTimeout(function(){ card.classList.remove('flash'); }, 900);
+  }
+
+  /* ---------- navigation ---------- */
+  var screens = ['home','sectionpick','taskpick','run','done'];
+  function show(name){
+    screens.forEach(function(s){
+      document.getElementById('screen-' + s).hidden = (s !== name);
+    });
+  }
+
+  /* ---------- state ---------- */
+  var runState = {
+    queue: [],
+    idx: -1,
+    secondsLeft: 0,
+    total: 0,
+    running: false,
+    timerId: null,
+    warn5: false,
+    warn1: false,
+    contextLabel: '',
+    returnTo: 'home',
+    gen: 0
+  };
+
+  function fmt(s){
+    s = Math.max(0, Math.round(s));
+    var m = Math.floor(s/60), sec = s%60;
+    return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+  }
+
+  function buildFullQueue(){
+    var q = [];
+    SECTION_ORDER.forEach(function(key){
+      var sec = SECTIONS[key];
+      if(key === 'speaking' || key === 'writing'){
+        sec.tasks.forEach(function(task){
+          var perItemSec = task.defaultSec != null ? task.defaultSec : task.responseSec;
+          q = q.concat(buildDrillQueue(key, task, task.itemsNum, perItemSec));
+        });
+      } else {
+        q.push({
+          kind:'section', sectionKey:key, label:sec.name, sub:sec.rangeNote, seconds:sec.minutes*60,
+          taskList: sec.tasks.map(function(t){ return t.name; }).join(', ')
+        });
+      }
+    });
+    return q;
+  }
+  function buildSectionQueue(key){
+    var sec = SECTIONS[key];
+    return [{ kind:'section', sectionKey:key, label:sec.name, sub:sec.rangeNote, seconds:sec.minutes*60 }];
+  }
+  function buildDrillQueue(sectionKey, task, itemsNum, secPerItem){
+    var sec = SECTIONS[sectionKey];
+    if(task.fixedMinutes){
+      return [{ kind:'task', sectionKey:sectionKey, label:task.name, sub:sec.name, seconds:task.fixedMinutes*60 }];
+    }
+    var q = [];
+    var n = Math.max(1, itemsNum|0);
+    var isSpeaking = task.responseSec != null;
+    for(var i=1;i<=n;i++){
+      q.push({
+        kind: isSpeaking ? 'response' : 'item',
+        sectionKey: sectionKey,
+        label: task.name,
+        sub: sec.name+', item '+i+' of '+n,
+        seconds: Math.max(1, secPerItem|0)
+      });
+    }
+    return q;
+  }
+
+  function startQueue(queue, label){
+    clearInterval(runState.timerId);
+    runState.queue = queue;
+    runState.idx = -1;
+    runState.contextLabel = label;
+    runState.running = false;
+    show('run');
+    advancePhase(true);
+  }
+
+  function currentPhase(){ return runState.queue[runState.idx]; }
+
+  function sectionColorVar(key){
+    return key ? SECTIONS[key].color : '--accent';
+  }
+
+  function enterPhase(newIdx, forcePause){
+    runState.gen++;
+    if(newIdx >= runState.queue.length){
+      finishQueue();
+      return;
+    }
+    if(newIdx < 0){ newIdx = 0; }
+    runState.idx = newIdx;
+    var ph = currentPhase();
+    runState.secondsLeft = ph.seconds;
+    runState.total = ph.seconds;
+    runState.warn5 = false;
+    runState.warn1 = false;
+    if(forcePause || ph.kind === 'response'){
+      runState.running = false;
+      clearInterval(runState.timerId);
+    }
+    renderRun();
+    updatePlayIcon();
+    announce(ph.label + ', ' + fmt(ph.seconds) + (ph.kind === 'response' ? '. Press start when ready to respond.' : ' remaining.'));
+  }
+
+  function advancePhase(isFirst){
+    enterPhase(runState.idx + 1, false);
+  }
+
+  function goForward(){
+    clearInterval(runState.timerId);
+    enterPhase(runState.idx + 1, true);
+  }
+
+  function goBack(){
+    if(runState.idx <= 0) return;
+    clearInterval(runState.timerId);
+    enterPhase(runState.idx - 1, true);
+  }
+
+  function finishQueue(){
+    clearInterval(runState.timerId);
+    runState.running = false;
+    clearProgress();
+    showResumeCard();
+    var label = runState.contextLabel;
+    document.getElementById('doneTitle').textContent = label === 'full' ? 'Practice test complete' : (label === 'section' ? 'Section complete' : 'Practice complete');
+    document.getElementById('doneSub').textContent = label === 'full'
+      ? 'You ran all four sections back-to-back.'
+      : 'Nice work. Start another set whenever you\'re ready.';
+    show('done');
+  }
+
+  function tick(){
+    runState.secondsLeft -= 1;
+    var ph = currentPhase();
+    if(ph.seconds > 90){
+      if(!runState.warn5 && runState.secondsLeft <= 300){ runState.warn5 = true; announce('5 minutes remaining.'); }
+      if(!runState.warn1 && runState.secondsLeft <= 60){ runState.warn1 = true; announce('1 minute remaining.'); }
+    }
+    if(runState.secondsLeft <= 0){
+      clearInterval(runState.timerId);
+      renderRun();
+      signalTimeUp();
+      var genAtEnd = runState.gen;
+      setTimeout(function(){
+        if(runState.gen === genAtEnd){ advancePhase(false); }
+      }, 900);
+      return;
+    }
+    renderRun();
+  }
+
+  function playPause(){
+    if(runState.idx < 0) return;
+    if(runState.running){
+      runState.running = false;
+      clearInterval(runState.timerId);
+    } else {
+      runState.running = true;
+      var ph = currentPhase();
+      if(ph && ph.kind === 'response'){ playBeep(); }
+      runState.timerId = setInterval(tick, 1000);
+    }
+    updatePlayIcon();
+  }
+  function updatePlayIcon(){
+    var icon = document.getElementById('playPauseIcon');
+    var btn = document.getElementById('playPauseBtn');
+    if(runState.running){
+      icon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+      btn.setAttribute('aria-label','Pause');
+    } else {
+      icon.innerHTML = '<polygon points="6,4 20,12 6,20"></polygon>';
+      btn.setAttribute('aria-label','Start');
+    }
+  }
+
+  var RING_CIRC = 2 * Math.PI * 90;
+  function renderRun(){
+    var ph = currentPhase();
+    if(!ph) return;
+    var colorVar = sectionColorVar(ph.sectionKey);
+    document.getElementById('runCard').style.setProperty('--sc', 'var(' + colorVar + ')');
+    document.getElementById('runSection').textContent = ph.sectionKey ? SECTIONS[ph.sectionKey].name : 'Full test';
+    document.getElementById('runSection').style.color = 'var(' + colorVar + ')';
+    document.getElementById('runPhase').textContent = ph.label;
+    document.getElementById('runPhaseSub').textContent = ph.sub || '';
+    document.getElementById('runTaskList').textContent = ph.taskList ? ('Includes: ' + ph.taskList) : '';
+    document.getElementById('prevBtn').disabled = runState.idx <= 0;
+
+    var bigTime = document.getElementById('bigTime');
+    bigTime.textContent = fmt(runState.secondsLeft);
+    bigTime.className = 'big-time mono'
+      + (runState.secondsLeft <= 10 ? ' critical' : (ph.seconds > 90 && runState.secondsLeft <= 60 ? ' critical' : (ph.seconds > 90 && runState.secondsLeft <= 300 ? ' warn' : '')))
+      + (runState.secondsLeft <= 0 ? ' time-up' : '');
+
+    var frac = runState.total > 0 ? (runState.secondsLeft / runState.total) : 0;
+    var ring = document.getElementById('ringProgress');
+    ring.setAttribute('stroke-dasharray', RING_CIRC);
+    ring.setAttribute('stroke-dashoffset', RING_CIRC * (1 - frac));
+    ring.style.stroke = 'var(' + colorVar + ')';
+
+    var next = runState.queue[runState.idx+1];
+    var upNextEl = document.getElementById('upNext');
+    if(ph.kind === 'response' && !runState.running){
+      upNextEl.textContent = runState.secondsLeft === runState.total
+        ? 'Read the question, then press start to respond'
+        : 'Paused';
+    } else {
+      upNextEl.textContent = next ? ('Next: ' + next.label) : 'Last item';
+    }
+
+    var strip = document.getElementById('queueStrip');
+    if(runState.queue.length <= 40){
+      strip.innerHTML = '';
+      runState.queue.forEach(function(q, i){
+        var d = document.createElement('span');
+        d.className = 'qdot' + (i < runState.idx ? ' done' : (i === runState.idx ? ' current' : ''));
+        if(i === runState.idx){ d.style.setProperty('--sc', 'var(' + colorVar + ')'); }
+        strip.appendChild(d);
+      });
+    } else {
+      strip.innerHTML = '';
+    }
+    document.getElementById('stepCount').textContent = runState.queue.length > 1 ? ('Step ' + (runState.idx + 1) + ' of ' + runState.queue.length) : '';
+    saveProgress();
+  }
+
+  var announceTimer = null;
+  function announce(msg){
+    var el = document.getElementById('srAnnounce');
+    el.textContent = msg;
+  }
+
+  /* ---------- render: section pick ---------- */
+  function renderSectionPick(){
+    document.getElementById('sectionPickTitle').textContent = 'Choose a section';
+    var grid = document.getElementById('sectionGrid');
+    grid.innerHTML = '';
+    SECTION_ORDER.forEach(function(key){
+      var sec = SECTIONS[key];
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'section-btn';
+      btn.style.setProperty('--sc', 'var(' + sec.color + ')');
+      btn.innerHTML = '<span class="s-name">' + sec.name + '</span><span class="s-sub">' + sec.rangeNote + ', ' + sec.items + ' items</span>';
+      btn.addEventListener('click', function(){
+        renderTaskPick(key);
+        show('taskpick');
+      });
+      grid.appendChild(btn);
+    });
+    show('sectionpick');
+  }
+
+  function renderTaskPick(sectionKey){
+    var sec = SECTIONS[sectionKey];
+    document.getElementById('taskPickTitle').textContent = sec.name;
+    var list = document.getElementById('taskList');
+    list.innerHTML = '';
+
+    var fullRow = document.createElement('div');
+    fullRow.className = 'task-row';
+    fullRow.style.setProperty('--sc', 'var(' + sec.color + ')');
+    fullRow.style.borderLeft = '5px solid var(--sc)';
+    fullRow.innerHTML = '<div class="t-head"><span class="t-name">Full ' + sec.name + ' clock</span></div>'
+      + '<div class="t-note">Run the whole section at its official length: ' + sec.rangeNote + ', ' + sec.items + ' items.</div>';
+    var fullStart = document.createElement('button');
+    fullStart.type = 'button';
+    fullStart.className = 't-start';
+    fullStart.textContent = 'Start full section';
+    fullStart.addEventListener('click', function(){
+      startQueue(buildSectionQueue(sectionKey), 'section');
+    });
+    fullRow.appendChild(fullStart);
+    list.appendChild(fullRow);
+
+    sec.tasks.forEach(function(task, ti){
+      var row = document.createElement('div');
+      row.className = 'task-row';
+      var head = document.createElement('div');
+      head.className = 't-head';
+      head.innerHTML = '<span class="t-name">' + task.name + '</span><span class="tag approx">Estimated pace</span>';
+      row.appendChild(head);
+
+      var note = document.createElement('div');
+      note.className = 't-note';
+      note.textContent = task.note;
+      row.appendChild(note);
+
+      var fields = document.createElement('div');
+      fields.className = 't-fields';
+
+      var startBtn = document.createElement('button');
+      startBtn.type = 'button';
+      startBtn.className = 't-start';
+      startBtn.textContent = 'Start';
+
+      if(task.fixedMinutes){
+        var fSpan = document.createElement('div');
+        fSpan.className = 'field';
+        fSpan.innerHTML = '<span>Duration</span><span class="mono" style="padding-top:6px;font-weight:600;">' + task.fixedMinutes + ':00</span>';
+        fields.appendChild(fSpan);
+        row.appendChild(fields);
+        row.appendChild(startBtn);
+        startBtn.addEventListener('click', function(){
+          startQueue(buildDrillQueue(sectionKey, task, 1, 0), 'drill');
+        });
+      } else if(task.responseSec != null){
+        var itemsField = document.createElement('div');
+        itemsField.className = 'field';
+        itemsField.innerHTML = '<span>Items</span>';
+        var itemsInput = document.createElement('input');
+        itemsInput.type = 'number'; itemsInput.min = '1'; itemsInput.max = '20'; itemsInput.value = task.itemsNum;
+        itemsField.appendChild(itemsInput);
+
+        var respField = document.createElement('div');
+        respField.className = 'field';
+        respField.innerHTML = '<span>Response (sec), no prep</span>';
+        var respInput = document.createElement('input');
+        respInput.type = 'number'; respInput.min = '5'; respInput.max = '180'; respInput.value = task.responseSec;
+        respField.appendChild(respInput);
+
+        fields.appendChild(itemsField); fields.appendChild(respField);
+        row.appendChild(fields);
+        row.appendChild(startBtn);
+        startBtn.addEventListener('click', function(){
+          startQueue(buildDrillQueue(sectionKey, task, itemsInput.value, respInput.value), 'drill');
+        });
+      } else {
+        var itemsField2 = document.createElement('div');
+        itemsField2.className = 'field';
+        itemsField2.innerHTML = '<span>Items</span>';
+        var itemsInput2 = document.createElement('input');
+        itemsInput2.type = 'number'; itemsInput2.min = '1'; itemsInput2.max = '50'; itemsInput2.value = task.itemsNum;
+        itemsField2.appendChild(itemsInput2);
+
+        var secField = document.createElement('div');
+        secField.className = 'field';
+        secField.innerHTML = '<span>Sec / item</span>';
+        var secInput = document.createElement('input');
+        secInput.type = 'number'; secInput.min = '5'; secInput.max = '300'; secInput.value = task.defaultSec;
+        secField.appendChild(secInput);
+
+        fields.appendChild(itemsField2); fields.appendChild(secField);
+        row.appendChild(fields);
+        row.appendChild(startBtn);
+        startBtn.addEventListener('click', function(){
+          startQueue(buildDrillQueue(sectionKey, task, itemsInput2.value, secInput.value), 'drill');
+        });
+      }
+
+      list.appendChild(row);
+    });
+  }
+
+  /* ---------- wiring ---------- */
+  document.querySelectorAll('.mode-card').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var mode = btn.getAttribute('data-mode');
+      if(mode === 'full'){
+        startQueue(buildFullQueue(), 'full');
+      } else if(mode === 'section'){
+        renderSectionPick();
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-back]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-back');
+      show(target === 'home' ? 'home' : 'sectionpick');
+    });
+  });
+
+  document.getElementById('playPauseBtn').addEventListener('click', playPause);
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    if(runState.idx < 0) return;
+    runState.gen++;
+    runState.running = false;
+    clearInterval(runState.timerId);
+    var ph = currentPhase();
+    runState.secondsLeft = ph.seconds;
+    runState.warn5 = false; runState.warn1 = false;
+    renderRun();
+    updatePlayIcon();
+  });
+  document.getElementById('skipBtn').addEventListener('click', goForward);
+  document.getElementById('prevBtn').addEventListener('click', goBack);
+  document.getElementById('exitRun').addEventListener('click', function(){
+    runState.gen++;
+    clearInterval(runState.timerId);
+    runState.running = false;
+    clearProgress();
+    showResumeCard();
+    show('home');
+  });
+  document.getElementById('doneRestart').addEventListener('click', function(){
+    var label = runState.contextLabel;
+    var q = runState.queue.map(function(p){ return Object.assign({}, p); });
+    startQueue(q, label);
+  });
+  document.getElementById('doneHome').addEventListener('click', function(){ showResumeCard(); show('home'); });
+
+  document.addEventListener('keydown', function(e){
+    if(document.getElementById('screen-run').hidden) return;
+    if(e.target && (e.target.tagName === 'INPUT')) return;
+    if(e.code === 'Space'){ e.preventDefault(); playPause(); }
+    else if(e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight'){ goForward(); }
+    else if(e.key === 'p' || e.key === 'P' || e.key === 'ArrowLeft'){ goBack(); }
+    else if(e.key === 'r' || e.key === 'R'){ document.getElementById('resetBtn').click(); }
+  });
+
+  /* sound toggle */
+  var soundBtn = document.getElementById('soundToggle');
+  var soundIcon = document.getElementById('soundIcon');
+  function renderSoundIcon(){
+    soundBtn.setAttribute('aria-pressed', String(settings.soundOn));
+    soundBtn.setAttribute('aria-label', settings.soundOn ? 'Mute timer sounds' : 'Unmute timer sounds');
+    soundIcon.innerHTML = settings.soundOn
+      ? '<polygon points="4,9 8,9 13,4 13,20 8,15 4,15"></polygon><path d="M16 8a5 5 0 0 1 0 8"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path>'
+      : '<polygon points="4,9 8,9 13,4 13,20 8,15 4,15"></polygon><line x1="16" y1="8" x2="21" y2="16"></line><line x1="21" y1="8" x2="16" y2="16"></line>';
+  }
+  soundBtn.addEventListener('click', function(){
+    settings.soundOn = !settings.soundOn;
+    renderSoundIcon();
+    saveSettings();
+    if(settings.soundOn){ ensureCtx(); }
+  });
+  renderSoundIcon();
+
+  /* share link */
+  var toastEl = document.getElementById('toast');
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 1800);
+  }
+  document.getElementById('copyLinkBtn').addEventListener('click', function(){
+    var text = '';
+    try{ text = location.href; }catch(e){}
+    function fallbackCopy(){
+      try{
+        var tmp = document.createElement('textarea');
+        tmp.value = text;
+        tmp.style.position = 'fixed';
+        tmp.style.opacity = '0';
+        document.body.appendChild(tmp);
+        tmp.select();
+        document.execCommand('copy');
+        document.body.removeChild(tmp);
+        showToast('Link copied');
+      }catch(err){
+        showToast('Could not copy automatically');
+      }
+    }
+    try{
+      navigator.clipboard.writeText(text).then(function(){ showToast('Link copied'); }).catch(fallbackCopy);
+    }catch(e){ fallbackCopy(); }
+  });
+
+  /* resume in-progress run */
+  function showResumeCard(){
+    var data = loadProgress();
+    var card = document.getElementById('resumeCard');
+    if(!data){ card.hidden = true; return; }
+    var ph = data.queue[data.idx];
+    var stepText = data.queue.length > 1 ? (', step ' + (data.idx + 1) + ' of ' + data.queue.length) : '';
+    document.getElementById('resumeDesc').textContent = ph.label + stepText + ', ' + fmt(data.secondsLeft) + ' left';
+    card.hidden = false;
+  }
+  document.getElementById('resumeBtn').addEventListener('click', function(){
+    var data = loadProgress();
+    if(!data) return;
+    runState.gen++;
+    runState.queue = data.queue;
+    runState.idx = data.idx;
+    runState.contextLabel = data.contextLabel;
+    runState.running = false;
+    var ph = runState.queue[runState.idx];
+    runState.secondsLeft = data.secondsLeft;
+    runState.total = ph.seconds;
+    runState.warn5 = ph.seconds > 90 && data.secondsLeft <= 300;
+    runState.warn1 = ph.seconds > 90 && data.secondsLeft <= 60;
+    show('run');
+    renderRun();
+    updatePlayIcon();
+  });
+  document.getElementById('discardBtn').addEventListener('click', function(){
+    clearProgress();
+    document.getElementById('resumeCard').hidden = true;
+  });
+
+  showResumeCard();
+  show('home');
+})();
+</script>
+</body>
+</html>
