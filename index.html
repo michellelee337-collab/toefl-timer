@@ -897,9 +897,9 @@
     toastEl.classList.add('show');
     setTimeout(function(){ toastEl.classList.remove('show'); }, 1800);
   }
+  var PUBLIC_URL = 'https://michellelee337.com/toefl-timer/';
   document.getElementById('copyLinkBtn').addEventListener('click', function(){
-    var text = '';
-    try{ text = location.href; }catch(e){}
+    var text = PUBLIC_URL;
     function fallbackCopy(){
       try{
         var tmp = document.createElement('textarea');
